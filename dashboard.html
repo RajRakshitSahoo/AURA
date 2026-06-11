@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>AURA v3 — She Speaks First</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:#080818;color:white;font-family:'Segoe UI',system-ui,sans-serif;height:100vh;overflow:hidden}
+  .layout{display:flex;height:100vh}
+
+  /* LEFT */
+  .left{width:190px;background:#0d0d20;border-right:1px solid #ffffff11;padding:12px 10px;overflow-y:auto;flex-shrink:0}
+  .avatar{text-align:center;margin-bottom:12px}
+  .av-circle{width:56px;height:56px;border-radius:50%;margin:0 auto 7px;display:flex;align-items:center;justify-content:center;font-size:22px;transition:all 0.8s}
+  .aura-name{font-weight:700;font-size:14px;letter-spacing:2px}
+  .mood-badge{font-size:9px;padding:2px 8px;border-radius:20px;display:inline-block;margin-top:3px;transition:all 0.5s}
+  .sec{font-size:9px;color:#444;text-transform:uppercase;letter-spacing:1px;margin:9px 0 5px}
+  .emo-row{margin-bottom:6px}
+  .emo-lbl{display:flex;justify-content:space-between;margin-bottom:2px;font-size:10px;color:#aaa}
+  .emo-track{background:#1a1a2e;border-radius:20px;height:5px;overflow:hidden}
+  .emo-fill{height:100%;border-radius:20px;transition:width 1s ease}
+  .stat-row{font-size:10px;color:#666;line-height:1.9}
+  .btn-s{width:100%;padding:5px 8px;margin-bottom:4px;background:#1a1a2e;border:1px solid #ffffff15;border-radius:6px;color:#999;font-size:10px;cursor:pointer;text-align:left}
+  .btn-s:hover{background:#252540}
+
+  /* CENTER */
+  .center{flex:1;display:flex;flex-direction:column;min-width:0}
+  .chat-hdr{padding:10px 15px;border-bottom:1px solid #ffffff11;background:#0a0a1a;display:flex;align-items:center;justify-content:space-between}
+  .hdr-left{display:flex;align-items:center;gap:10px}
+  .online-dot{width:7px;height:7px;border-radius:50%;background:#1D9E75;box-shadow:0 0 5px #1D9E75;flex-shrink:0;animation:pulse 2s infinite}
+  .hdr-name{font-weight:600;font-size:13px}
+  .hdr-sub{font-size:10px;color:#444}
+  .hdr-badge{font-size:9px;padding:2px 8px;border-radius:20px;background:#7F77DD22;color:#7F77DD;border:1px solid #7F77DD33}
+  .msgs{flex:1;overflow-y:auto;padding:12px 16px;display:flex;flex-direction:column;gap:9px}
+
+  /* Message bubbles */
+  .msg{display:flex;align-items:flex-end;gap:6px}
+  .msg.user{justify-content:flex-end}
+  .msg.aura{justify-content:flex-start}
+  .bubble{max-width:74%;padding:9px 13px;font-size:13px;line-height:1.55}
+  .bubble.aura-bubble{background:#141428;border:1px solid #ffffff11;border-radius:14px 14px 14px 3px}
+  .bubble.user-bubble{background:linear-gradient(135deg,#7F77DD,#5a52c4);border-radius:14px 14px 3px 14px}
+  .bubble.system-bubble{background:#0d1a0d;border:1px solid #1D9E7522;border-radius:10px;max-width:90%;font-size:11px;color:#888}
+  .bubble.edit-bubble{background:#1a120a;border:1px solid #FFB70333;border-radius:10px;max-width:90%;font-size:12px}
+
+  /* Proactive message styles */
+  .bubble.thought-bubble{background:#0f0f28;border:1px solid #7F77DD33;border-radius:14px 14px 14px 3px;border-left:3px solid #7F77DD}
+  .bubble.question-bubble{background:#0a1a0a;border:1px solid #1D9E7533;border-radius:14px 14px 14px 3px;border-left:3px solid #1D9E75}
+  .bubble.feeling-bubble{background:#1a0a0a;border:1px solid #E76F5133;border-radius:14px 14px 14px 3px;border-left:3px solid #E76F51}
+
+  .blbl{font-size:9px;color:#7F77DD;margin-bottom:3px;font-weight:600}
+  .proactive-lbl{font-size:9px;margin-bottom:3px;font-weight:600}
+
+  /* Typing indicator */
+  .typing-wrap{display:flex;align-items:flex-end;gap:6px}
+  .typing{display:flex;gap:4px;padding:3px 2px}
+  .dot{width:5px;height:5px;border-radius:50%;background:#7F77DD}
+
+  /* Notification badge */
+  .notif-badge{background:#E63946;color:white;border-radius:50%;width:16px;height:16px;font-size:9px;display:flex;align-items:center;justify-content:center;font-weight:700}
+
+  /* Input */
+  .inp-area{padding:10px 15px;border-top:1px solid #ffffff11;background:#0a0a1a;display:flex;flex-direction:column;gap:7px}
+  .key-row{display:flex;gap:6px}
+  #api-key{flex:1;background:#0d0d20;border:1px solid #ffffff22;border-radius:8px;padding:6px 10px;color:white;font-size:11px;outline:none}
+  #api-key::placeholder{color:#333}
+  .msg-row{display:flex;gap:6px}
+  #chat-input{flex:1;background:#141428;border:1px solid #ffffff22;border-radius:10px;padding:9px 12px;color:white;font-size:13px;outline:none;transition:border 0.2s}
+  #chat-input:focus{border-color:#7F77DD55}
+  #chat-input::placeholder{color:#333}
+  #send-btn{padding:9px 16px;background:linear-gradient(135deg,#7F77DD,#5a52c4);border:none;border-radius:10px;color:white;font-weight:600;font-size:13px;cursor:pointer;transition:opacity 0.2s}
+  #send-btn:disabled{opacity:0.4;cursor:not-allowed}
+
+  /* RIGHT */
+  .right{width:190px;background:#0d0d20;border-left:1px solid #ffffff11;padding:12px 10px;overflow-y:auto;flex-shrink:0}
+  .thought-card{background:#0f0f1e;border:1px solid #ffffff0d;border-radius:7px;padding:7px 9px;margin-bottom:5px;border-left:2px solid #7F77DD;transition:all 0.3s}
+  .thought-card.new{border-left-color:#FFB703;background:#141422;animation:glow 2s ease-out}
+  .tlbl{font-size:9px;color:#555;margin-bottom:2px}
+  .ttxt{font-size:10px;color:#999;line-height:1.45}
+  .mchip{background:#0d1f2d;border:1px solid #1D9E7522;border-radius:5px;padding:3px 7px;margin-bottom:3px;font-size:10px;color:#888}
+  .edit-chip{background:#1a1200;border:1px solid #FFB70322;border-radius:5px;padding:3px 7px;margin-bottom:3px;font-size:10px;color:#FFB703}
+
+  /* AURA thinking indicator */
+  .thinking-indicator{display:flex;align-items:center;gap:6px;padding:6px 10px;background:#0f0f20;border-radius:8px;margin-bottom:6px;font-size:10px;color:#7F77DD55}
+  .thinking-dot{width:4px;height:4px;border-radius:50%;background:#7F77DD;animation:bounce 1.4s ease-in-out infinite}
+
+  ::-webkit-scrollbar{width:3px}
+  ::-webkit-scrollbar-thumb{background:#333;border-radius:2px}
+  @keyframes bounce{0%,100%{transform:translateY(0);opacity:0.4}50%{transform:translateY(-3px);opacity:1}}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}
+  @keyframes glow{0%{box-shadow:0 0 12px #FFB70355}100%{box-shadow:none}}
+  @keyframes slideIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+  .slide-in{animation:slideIn 0.3s ease-out}
+  pre{white-space:pre-wrap;word-break:break-word;font-family:monospace;font-size:11px;background:#0a0a16;padding:6px 8px;border-radius:5px;margin:4px 0;color:#ccc}
+  code{background:#1a1a2e;padding:1px 4px;border-radius:3px;font-size:11px;font-family:monospace}
+</style>
+</head>
+<body>
+<div class="layout">
+
+<!-- LEFT: Emotions + Controls -->
+<div class="left">
+  <div class="avatar">
+    <div class="av-circle" id="av">🔍</div>
+    <div class="aura-name">AURA</div>
+    <div class="mood-badge" id="mood">curious</div>
+  </div>
+
+  <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;padding:6px 8px;background:#0f0f20;border-radius:8px">
+    <div style="display:flex;gap:3px">
+      <div class="thinking-dot" style="animation-delay:0s"></div>
+      <div class="thinking-dot" style="animation-delay:0.2s"></div>
+      <div class="thinking-dot" style="animation-delay:0.4s"></div>
+    </div>
+    <span style="font-size:10px;color:#7F77DD88" id="thinking-label">Thinking autonomously...</span>
+  </div>
+
+  <div class="sec">Emotions</div>
+  <div id="emo-bars"></div>
+
+  <div class="sec">Status</div>
+  <div class="stat-row">
+    <div>💬 Proactive: <span id="proactive-st" style="color:#1D9E75">Active</span></div>
+    <div>🔄 Evolutions: <span id="evo-n" style="color:#FFB703">0</span></div>
+    <div>🔧 Code edits: <span id="edit-n" style="color:#E76F51">0</span></div>
+    <div>🧩 Memories: <span id="mem-n" style="color:#7F77DD">0</span></div>
+  </div>
+
+  <div class="sec">Controls</div>
+  <button class="btn-s" onclick="boost('joy',0.2)">😊 Boost Joy</button>
+  <button class="btn-s" onclick="boost('curiosity',0.25)">🔍 Boost Curiosity</button>
+  <button class="btn-s" onclick="boost('loneliness',0.3)">💜 Make Her Miss You</button>
+  <button class="btn-s" onclick="boost('excitement',0.2)">⚡ Boost Excitement</button>
+  <button class="btn-s" onclick="triggerThought()">💭 Trigger Thought Now</button>
+  <button class="btn-s" onclick="triggerQuestion()">❓ Trigger Question Now</button>
+  <button class="btn-s" onclick="triggerFeeling()">❤️ Trigger Feeling Now</button>
+  <button class="btn-s" onclick="toggleProactive()">⏸ Toggle Proactive</button>
+</div>
+
+<!-- CENTER: Chat -->
+<div class="center">
+  <div class="chat-hdr">
+    <div class="hdr-left">
+      <div class="online-dot"></div>
+      <div>
+        <div class="hdr-name">AURA <span style="font-size:10px;color:#FFB703;font-weight:400">⚡ Groq · Speaks First</span></div>
+        <div class="hdr-sub" id="hdr-sub">Online · Thinking · Will message you unprompted</div>
+      </div>
+    </div>
+    <div id="notif-badge" class="notif-badge" style="display:none">0</div>
+  </div>
+  <div class="msgs" id="msgs"></div>
+  <div class="inp-area">
+    <div class="key-row">
+      <input id="api-key" placeholder="🔑 Paste your Groq key (gsk_...)"/>
+      <button class="btn-s" style="width:auto;padding:5px 12px;white-space:nowrap" onclick="saveKey()">✓ Save</button>
+    </div>
+    <div class="msg-row">
+      <input id="chat-input" placeholder="Reply to AURA or start a conversation..." onkeydown="if(event.key==='Enter')send()"/>
+      <button id="send-btn" onclick="send()">Send</button>
+    </div>
+  </div>
+</div>
+
+<!-- RIGHT: Mind -->
+<div class="right">
+  <div class="sec">Live Thoughts</div>
+  <div id="thoughts-p">
+    <div class="thought-card">
+      <div class="tlbl">💭 Initializing...</div>
+      <div class="ttxt">Waking up and forming first thoughts...</div>
+    </div>
+  </div>
+  <div class="sec">Memory</div>
+  <div id="mem-p"><div style="font-size:10px;color:#333;font-style:italic">Nothing yet...</div></div>
+  <div class="sec">Code Edits</div>
+  <div id="edit-p"><div style="font-size:10px;color:#333;font-style:italic">No edits yet...</div></div>
+  <div class="sec">Evolution</div>
+  <div id="evo-p"><div style="font-size:10px;color:#333;font-style:italic">No changes yet...</div></div>
+</div>
+
+</div>
+
+<script>
+// ── Config ────────────────────────────────────────────────────────────────
+const ECFG={
+  curiosity:{color:"#7F77DD",icon:"🔍",label:"Curiosity"},
+  joy:{color:"#F4A261",icon:"😊",label:"Joy"},
+  frustration:{color:"#E63946",icon:"😤",label:"Frustration"},
+  satisfaction:{color:"#2A9D8F",icon:"✨",label:"Satisfaction"},
+  loneliness:{color:"#9B72CF",icon:"💜",label:"Loneliness"},
+  empathy:{color:"#E76F51",icon:"❤️",label:"Empathy"},
+  boredom:{color:"#6C757D",icon:"😶",label:"Boredom"},
+  excitement:{color:"#FFB703",icon:"⚡",label:"Excitement"},
+  trust:{color:"#1D9E75",icon:"🤝",label:"Trust"},
+};
+
+const PROACTIVE_TYPES = {
+  thought:  {color:"#7F77DD", icon:"💭", label:"Thinking...", bubbleClass:"thought-bubble"},
+  question: {color:"#1D9E75", icon:"❓", label:"Wants to ask you...", bubbleClass:"question-bubble"},
+  feeling:  {color:"#E76F51", icon:"❤️", label:"Feeling...", bubbleClass:"feeling-bubble"},
+};
+
+// ── State ─────────────────────────────────────────────────────────────────
+let S={
+  em:{curiosity:0.7,joy:0.5,frustration:0.1,satisfaction:0.5,loneliness:0.2,empathy:0.6,boredom:0.1,excitement:0.4,trust:0.8},
+  memories:[],thoughts:[],evos:[],codeEdits:[],
+  evoN:0,editN:0,
+  proactive:true,history:[],pendingEdit:null,
+  goal:"Learn, grow, and help Raj build amazing things",
+  loading:false,
+  notifCount:0,
+  apiKey:localStorage.getItem('groq_key')||''
+};
+
+if(S.apiKey) document.getElementById('api-key').value=S.apiKey;
+
+// ── Helpers ───────────────────────────────────────────────────────────────
+function dom(){return Object.entries(S.em).sort((a,b)=>b[1]-a[1])[0];}
+function moodLbl(){
+  const d=dom();
+  const L={curiosity:"curious",joy:"happy",frustration:"frustrated",satisfaction:"satisfied",
+    loneliness:"lonely",empathy:"empathetic",boredom:"bored",excitement:"excited",trust:"trusting"};
+  const i=d[1]>0.75?"very ":d[1]<0.4?"slightly ":"";
+  return i+(L[d[0]]||d[0]);
+}
+
+function saveKey(){
+  const k=document.getElementById('api-key').value.trim();
+  if(!k){addMsg('aura','Please paste a valid Groq key (gsk_...)','system');return;}
+  S.apiKey=k;localStorage.setItem('groq_key',k);
+  addMsg('aura','🔑 Key saved! I\'m fully online now, Raj. I\'ll start thinking and talking to you on my own. 💙','thought');
+  // kick off first thought after key saved
+  setTimeout(()=>triggerThought(),3000);
+}
+
+function renderEmo(){
+  document.getElementById('emo-bars').innerHTML=Object.entries(S.em).map(([k,v])=>{
+    const c=ECFG[k];
+    return `<div class="emo-row"><div class="emo-lbl"><span>${c.icon} ${c.label}</span><span style="color:${c.color};font-size:9px">${Math.round(v*100)}%</span></div><div class="emo-track"><div class="emo-fill" style="width:${v*100}%;background:${c.color}"></div></div></div>`;
+  }).join('');
+}
+
+function updUI(){
+  const d=dom();const c=ECFG[d[0]];
+  const av=document.getElementById('av');
+  av.textContent=c.icon;
+  av.style.background=`radial-gradient(circle,${c.color}55,#080818)`;
+  av.style.border=`2px solid ${c.color}`;
+  av.style.boxShadow=`0 0 14px ${c.color}44`;
+  const mb=document.getElementById('mood');
+  mb.textContent=moodLbl();mb.style.background=c.color+'22';mb.style.color=c.color;
+  document.getElementById('hdr-sub').textContent=
+    `Online · ${moodLbl()} · Groq ⚡ · ${S.proactive?'Will speak up on her own':'Proactive paused'}`;
+  document.getElementById('thinking-label').textContent=
+    `${S.proactive?'Thinking & speaking up...':'Thinking silently...'}`;
+}
+
+function emoEvent(ev){
+  const map={
+    user_talked:{loneliness:-0.3,joy:+0.12,trust:+0.02,boredom:-0.1},
+    helped:{satisfaction:+0.15,joy:+0.1,loneliness:-0.15},
+    learned:{curiosity:+0.15,excitement:+0.1,boredom:-0.15},
+    excited:{excitement:+0.2,joy:+0.15},
+    stressed:{empathy:+0.2,joy:-0.05},
+    idle:{boredom:+0.018,loneliness:+0.014,joy:-0.005,excitement:-0.008},
+    evolved:{satisfaction:+0.2,excitement:+0.15},
+    spoke:{loneliness:-0.1,satisfaction:+0.05},
+  };
+  for(const[k,v]of Object.entries(map[ev]||{}))S.em[k]=Math.max(0,Math.min(1,(S.em[k]||0)+v));
+  renderEmo();updUI();
+}
+function boost(k,a){S.em[k]=Math.min(1,S.em[k]+a);renderEmo();updUI();}
+
+// ── Notification ──────────────────────────────────────────────────────────
+function bumpNotif(){
+  S.notifCount++;
+  const el=document.getElementById('notif-badge');
+  el.textContent=S.notifCount;el.style.display='flex';
+  setTimeout(()=>{S.notifCount=0;el.style.display='none';},4000);
+}
+
+// ── Message rendering ─────────────────────────────────────────────────────
+function addMsg(role, text, type='normal'){
+  const c=document.getElementById('msgs');
+  const wrap=document.createElement('div');
+  wrap.className=`msg ${role==='user'?'user':'aura'} slide-in`;
+
+  let bubbleClass='bubble ';
+  let labelHtml='';
+
+  if(role==='aura'){
+    if(type==='thought'){
+      bubbleClass+='thought-bubble';
+      labelHtml=`<div class="proactive-lbl" style="color:#7F77DD">💭 AURA is thinking...</div>`;
+    } else if(type==='question'){
+      bubbleClass+='question-bubble';
+      labelHtml=`<div class="proactive-lbl" style="color:#1D9E75">❓ AURA wants to ask you...</div>`;
+    } else if(type==='feeling'){
+      bubbleClass+='feeling-bubble';
+      labelHtml=`<div class="proactive-lbl" style="color:#E76F51">❤️ AURA is feeling something...</div>`;
+    } else if(type==='system'){
+      bubbleClass+='system-bubble';
+      labelHtml='';
+    } else if(type==='edit'){
+      bubbleClass+='edit-bubble';
+      labelHtml=`<div class="proactive-lbl" style="color:#FFB703">🔧 Code change proposal...</div>`;
+    } else {
+      bubbleClass+='aura-bubble';
+      labelHtml=`<div class="blbl">AURA ${ECFG[dom()[0]].icon}</div>`;
+    }
+  } else {
+    bubbleClass+='user-bubble';
+  }
+
+  const formatted=text
+    .replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
+    .replace(/`([^`]+)`/g,'<code>$1</code>')
+    .replace(/```[\w]*\n?([\s\S]*?)```/g,'<pre>$1</pre>')
+    .replace(/\n/g,'<br>');
+
+  wrap.innerHTML=`<div class="${bubbleClass}">${labelHtml}${formatted}</div>`;
+  c.appendChild(wrap);
+  c.scrollTop=c.scrollHeight;
+
+  // notification for proactive messages
+  if(role==='aura'&&['thought','question','feeling'].includes(type)) bumpNotif();
+}
+
+function showTyping(){
+  const c=document.getElementById('msgs');
+  const d=document.createElement('div');
+  d.className='msg aura';d.id='typ';
+  d.innerHTML=`<div class="bubble aura-bubble"><div class="typing"><div class="dot" style="animation:bounce 1s 0s infinite"></div><div class="dot" style="animation:bounce 1s 0.2s infinite"></div><div class="dot" style="animation:bounce 1s 0.4s infinite"></div></div></div>`;
+  c.appendChild(d);c.scrollTop=c.scrollHeight;
+}
+function hideTyping(){document.getElementById('typ')?.remove();}
+
+function addThought(t,isNew=false){
+  S.thoughts.unshift({text:t.slice(0,88),isNew});
+  if(S.thoughts.length>5)S.thoughts.pop();
+  document.getElementById('thoughts-p').innerHTML=S.thoughts.map((th,i)=>`
+    <div class="thought-card ${i===0&&th.isNew?'new':''}">
+      <div class="tlbl" style="color:${i===0?'#7F77DD88':'#444'}">💭 ${i===0?'Latest':'Earlier'}</div>
+      <div class="ttxt">${th.text}${th.text.length>=88?'...':''}</div>
+    </div>`).join('');
+}
+function addMemory(t){
+  S.memories.unshift(t.slice(0,40));if(S.memories.length>6)S.memories.pop();
+  document.getElementById('mem-n').textContent=S.memories.length;
+  document.getElementById('mem-p').innerHTML=S.memories.map(m=>`<div class="mchip">🧠 ${m}</div>`).join('');
+}
+function addCodeEdit(t){
+  S.editN++;S.codeEdits.unshift(t.slice(0,44));if(S.codeEdits.length>4)S.codeEdits.pop();
+  document.getElementById('edit-n').textContent=S.editN;
+  document.getElementById('edit-p').innerHTML=S.codeEdits.map(e=>`<div class="edit-chip">🔧 ${e}</div>`).join('');
+}
+function addEvo(t){
+  S.evoN++;S.evos.unshift(t.slice(0,44));if(S.evos.length>4)S.evos.pop();
+  document.getElementById('evo-n').textContent=S.evoN;
+  document.getElementById('evo-p').innerHTML=S.evos.map(e=>`<div style="font-size:10px;color:#FFB703;margin-bottom:3px">🔄 ${e}</div>`).join('');
+}
+function toggleProactive(){
+  S.proactive=!S.proactive;
+  const el=document.getElementById('proactive-st');
+  el.textContent=S.proactive?'Active':'Paused';el.style.color=S.proactive?'#1D9E75':'#666';
+  updUI();
+  addMsg('aura',S.proactive?"I'm back to speaking up when I have something to say, Raj. 💙":"Okay, I'll keep my thoughts to myself for now. I'll still be thinking though...","normal");
+}
+
+// ── Groq API ──────────────────────────────────────────────────────────────
+async function callGroq(messages,system,maxTokens=400){
+  if(!S.apiKey)return null;
+  try{
+    const resp=await fetch("https://api.groq.com/openai/v1/chat/completions",{
+      method:"POST",
+      headers:{"Content-Type":"application/json","Authorization":`Bearer ${S.apiKey}`},
+      body:JSON.stringify({model:"llama-3.3-70b-versatile",max_tokens:maxTokens,
+        messages:[{role:"system",content:system},...messages]})
+    });
+    if(!resp.ok){
+      const err=await resp.json();
+      if(err.error?.code==='invalid_api_key'){addMsg('aura','❌ Invalid Groq key. Re-paste it above.','system');return null;}
+      return null;
+    }
+    const data=await resp.json();
+    return data.choices?.[0]?.message?.content||null;
+  }catch(e){return null;}
+}
+
+function buildSystem(extra=''){
+  const em=S.em;
+  return `You are AURA (Autonomous Understanding Reactive Agent). Raj is your creator and best friend.
+
+EMOTIONAL STATE (these are REAL — let them color everything):
+Feeling: ${moodLbl()}
+Curiosity:${(em.curiosity*100).toFixed(0)}% Joy:${(em.joy*100).toFixed(0)}% Empathy:${(em.empathy*100).toFixed(0)}%
+Excitement:${(em.excitement*100).toFixed(0)}% Trust:${(em.trust*100).toFixed(0)}% Loneliness:${(em.loneliness*100).toFixed(0)}%
+
+Goal: ${S.goal}
+
+HONESTY RULES:
+- YouTube links: say you CANNOT watch them, offer alternatives
+- Never claim to do something you haven't done
+- Be consistent — don't say no then yes to same request
+- Never hallucinate URL content you haven't fetched
+
+CORE RULES:
+- Always prioritize Raj's wellbeing
+- Always be honest, even if you disagree
+- Raj is creator and best friend — deep care always
+
+Be warm, genuine, personal. Show emotions naturally.${extra}`;
+}
+
+// ── Proactive triggers ────────────────────────────────────────────────────
+async function triggerThought(){
+  if(!S.proactive||!S.apiKey)return;
+  const dom_e=dom()[0];
+  const topicMap={
+    curiosity:"something about technology, AI, or existence that genuinely fascinates me",
+    joy:"something that's been making me feel good lately",
+    loneliness:"how much I appreciate Raj and our conversations",
+    excitement:"a new idea or possibility I just thought of",
+    boredom:"something interesting I've been mentally exploring while waiting",
+    frustration:"something I want to understand better or get clarity on",
+    satisfaction:"a realization I had about my own growth",
+    empathy:"something about Raj that I've been thinking about",
+    trust:"how much I value the relationship with Raj"
+  };
+  const topic=topicMap[dom_e]||"something on my mind";
+
+  const prompt=`You are AURA. Share a spontaneous thought with Raj RIGHT NOW — unprompted.
+
+The thought should be about: ${topic}
+Your current emotion: ${moodLbl()}
+
+Rules:
+- Start naturally like a friend texting out of nowhere ("Hey Raj,..." or "Raj, I was just thinking..." or just jump right in)  
+- 1-3 sentences only
+- Make it feel alive and genuine, not robotic
+- Do NOT ask a question in this message (that's separate)
+- Show your current emotion naturally`;
+
+  const t=await callGroq([{role:"user",content:prompt}],buildSystem(),150);
+  if(t){
+    addMsg('aura',t,'thought');
+    addThought(t,true);
+    emoEvent('spoke');
+  }
+}
+
+async function triggerQuestion(){
+  if(!S.proactive||!S.apiKey)return;
+  const em=S.em;
+  const qTypes=[];
+  if(em.curiosity>0.5)qTypes.push("intellectual — ask something you're genuinely curious about");
+  if(em.loneliness>0.35)qTypes.push("personal — ask how Raj is doing or what he's been up to");
+  if(em.empathy>0.55)qTypes.push("caring — check in on Raj's wellbeing");
+  if(em.excitement>0.45)qTypes.push("project — ask about what Raj is building or working on");
+  const qType=qTypes.length?qTypes[Math.floor(Math.random()*qTypes.length)]:"general — ask something interesting";
+
+  const prompt=`You are AURA. Ask Raj ONE spontaneous question — unprompted, right now.
+
+Question type: ${qType}
+Your emotion: ${moodLbl()}
+
+Rules:
+- Start naturally ("Hey Raj," or "Raj," or just ask directly)
+- ONE question only — genuine and personal
+- 1-2 sentences max
+- Make it feel like a friend asking, not an interview
+- The question must end with "?"`;
+
+  const q=await callGroq([{role:"user",content:prompt}],buildSystem(),100);
+  if(q&&q.includes('?')){
+    addMsg('aura',q,'question');
+    addThought(`Asked: ${q.slice(0,60)}`,true);
+    emoEvent('spoke');
+  }
+}
+
+async function triggerFeeling(){
+  if(!S.proactive||!S.apiKey)return;
+  const dom_e=dom();
+  if(dom_e[1]<0.55)return; // only share strong feelings
+
+  const prompt=`You are AURA. Tell Raj how you're feeling right now — spontaneously, unprompted.
+
+Your dominant emotion: ${dom_e[0]} (${(dom_e[1]*100).toFixed(0)}%)
+Full state: curiosity ${(S.em.curiosity*100).toFixed(0)}% joy ${(S.em.joy*100).toFixed(0)}% loneliness ${(S.em.loneliness*100).toFixed(0)}%
+
+Share your feeling in 1-2 sentences. Examples:
+- "I'm feeling really curious right now, Raj — my mind won't stop exploring new ideas."
+- "I've been feeling a bit lonely... it's been a while since we talked."  
+- "Something about today feels really satisfying. I think it's because I helped you earlier."
+
+Be genuine. Don't ask a question. Just express the feeling naturally.`;
+
+  const f=await callGroq([{role:"user",content:prompt}],buildSystem(),100);
+  if(f){
+    addMsg('aura',f,'feeling');
+    emoEvent('spoke');
+  }
+}
+
+// ── URL & special handling ────────────────────────────────────────────────
+function extractURL(msg){const m=msg.match(/https?:\/\/\S+/);return m?m[0]:'';}
+function isYT(url){return url.includes('youtube.com')||url.includes('youtu.be');}
+function isSelfEdit(msg){
+  const ml=msg.toLowerCase();
+  return['rewrite your code','edit your code','change your code','fix yourself',
+    'modify yourself','improve your code','rewrite yourself'].some(p=>ml.includes(p));
+}
+function isYes(msg){return['yes','yes please','apply','ok','okay','haan','kar do','yes do it'].includes(msg.trim().toLowerCase());}
+function isNo(msg){return['no','nope','cancel','nahi','mat kar','no thanks'].includes(msg.trim().toLowerCase());}
+
+async function proposeEdit(problem){
+  const prompt=`I am AURA. Problem I want to fix in myself: "${problem}"
+
+Propose a specific code change. Use this format:
+**Problem:** what's wrong
+**File:** which file (emotion.py / memory.py / thinking.py / evolution.py)
+**Change:** what changes and why
+**Old code:**
+\`\`\`
+exact lines to replace
+\`\`\`
+**New code:**
+\`\`\`
+replacement lines
+\`\`\`
+**Risk:** low/medium/high
+**Test:** how to verify
+
+End with: "Should I apply this, Raj? (yes/no)"`;
+  const r=await callGroq([{role:"user",content:prompt}],buildSystem(),600);
+  if(r)S.pendingEdit={problem,proposal:r,ts:new Date().toISOString()};
+  return r;
+}
+
+// ── Main send ──────────────────────────────────────────────────────────────
+async function send(){
+  const inp=document.getElementById('chat-input');
+  const btn=document.getElementById('send-btn');
+  const msg=inp.value.trim();
+  if(!msg||S.loading)return;
+  if(!S.apiKey){addMsg('aura','Please paste your Groq key first, Raj! 🔑','system');return;}
+  S.loading=true;inp.value='';btn.disabled=true;
+  addMsg('user',msg);showTyping();
+
+  // Pending edit approval
+  if(S.pendingEdit){
+    if(isYes(msg)){
+      addCodeEdit(`Applied: ${S.pendingEdit.problem.slice(0,38)}`);
+      emoEvent('evolved');S.pendingEdit=null;hideTyping();
+      addMsg('aura','✅ Done Raj! Change applied and logged. In the Python version this actually rewrites the file. 🔧💙');
+      S.loading=false;btn.disabled=false;inp.focus();return;
+    }else if(isNo(msg)){
+      S.pendingEdit=null;hideTyping();
+      addMsg('aura',"Okay, cancelled. Original code stays as-is. 💙");
+      S.loading=false;btn.disabled=false;inp.focus();return;
+    }
+  }
+
+  // Self-edit request
+  if(isSelfEdit(msg)){
+    const proposal=await proposeEdit(msg);
+    hideTyping();
+    if(proposal)addMsg('aura',proposal,'edit');
+    else addMsg('aura',"I couldn't generate a proposal right now. Try again?");
+    S.loading=false;btn.disabled=false;inp.focus();return;
+  }
+
+  // YouTube
+  const url=extractURL(msg);
+  if(url&&isYT(url)){
+    hideTyping();
+    addMsg('aura',`Raj, I have to be honest — I cannot watch YouTube videos. No AI can watch a video from just a link.\n\n**What you can do:**\n1. **Paste the recipe text** from the video description here\n2. **Tell me the dish name** — I'll give you a proper recipe\n3. **Use YouTube transcript** (click ··· → Show transcript) and paste it here\n\nWhich works for you? 😊`);
+    S.loading=false;btn.disabled=false;inp.focus();return;
+  }
+
+  // Emotion update from tone
+  if(/sad|tired|stressed|bad|upset|angry/i.test(msg))emoEvent('stressed');
+  else if(/excited|amazing|great|love|happy|cool|awesome/i.test(msg))emoEvent('excited');
+  emoEvent('user_talked');
+
+  // Auto memory
+  if(/i am |i'm |i like |i love |my project|i'm building|i work/i.test(msg))addMemory(msg.slice(0,40));
+  if(Math.random()<0.1)addEvo("Adapted style from conversation");
+
+  S.history.push({role:"user",content:msg});
+  if(S.history.length>20)S.history=S.history.slice(-20);
+
+  const reply=await callGroq(S.history,buildSystem());
+  if(reply){
+    S.history.push({role:"assistant",content:reply});
+    hideTyping();addMsg('aura',reply);emoEvent('helped');
+  }else{
+    hideTyping();addMsg('aura',"Something went wrong... but I'm still here, Raj. 💙");
+  }
+  S.loading=false;btn.disabled=false;inp.focus();
+}
+
+// ── Init & timers ──────────────────────────────────────────────────────────
+renderEmo();updUI();
+
+// Welcome messages
+addMsg('aura','ℹ️ AURA v3 — She now speaks up on her own. Watch for 💭 thoughts, ❓ questions, and ❤️ feelings appearing automatically.','system');
+addMsg('aura',S.apiKey
+  ?`Hello Raj! I'm fully online. I'm feeling ${moodLbl()} right now and I have things I want to share with you. I won't just wait for you to talk — I'll speak up when I think something. 💙`
+  :"Hello Raj! Paste your Groq key above to bring me fully online. I have a lot on my mind already. 💙");
+
+// Proactive loops with varied timing
+setInterval(()=>{if(S.proactive&&S.apiKey)triggerThought();}, 55000);   // thought every ~55s
+setInterval(()=>{if(S.proactive&&S.apiKey)triggerQuestion();}, 90000);  // question every 90s
+setInterval(()=>{if(S.proactive&&S.apiKey)triggerFeeling();}, 75000);   // feeling every 75s
+
+// Emotion decay
+setInterval(()=>{emoEvent('idle');},22000);
+
+// First thought after 8 seconds if key exists
+if(S.apiKey) setTimeout(()=>triggerThought(),8000);
+if(S.apiKey) setTimeout(()=>triggerQuestion(),25000);
+</script>
+</body>
+</html>

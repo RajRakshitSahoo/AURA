@@ -7,7 +7,7 @@
 
 ### Option A — Browser Dashboard (Easiest)
 1. Open `dashboard.html` in any browser
-2. Paste your Groq API key (`gsk_...`) in the box
+2. Paste your Groq API key (`gsk_...`) in the box 
 3. Click **Save** and start talking to AURA
 
 ### Option B — Python Terminal
